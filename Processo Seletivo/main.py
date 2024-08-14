@@ -17,6 +17,25 @@ dicionario_escolaridade = {
     "G": "Completou a Pós-graduação.",
     "H": "Não sei."
 }
+faixas_de_renda = {
+    "A": "Nenhuma renda.",
+    "B": "Até 998,00.",
+    "C": "De 998,01 - 1.497,00.",
+    "D": "De 1.497,01 - 1.996,00.",
+    "E": "De 1.996,01 - 2.495,00.",
+    "F": "De 2.495,01 - 2.994,00.",
+    "G": "De 2.994,01 - 3.992,00.",
+    "H": "De 3.992,01 - 4.990,00.",
+    "I": "De 4.990,01 - 5.988,00.",
+    "J": "De 5.988,01 - 6.986,00.",
+    "K": "De 6.986,01 - 7.984,00.",
+    "L": "De 7.984,01 - 8.982,00.",
+    "M": "De 8.982,01 - 9.980,00.",
+    "N": "De 9.980,01 - 11.976,00.",
+    "O": "De 11.976,01 - 14.970,00.",
+    "P": "De 14.970,01 - 19.960,00.",
+    "Q": "Mais de  19.960,00."
+}
 
 colunas_materias = ['NU_NOTA_CN', 'NU_NOTA_CH', 'NU_NOTA_LC', 'NU_NOTA_MT', 'NU_NOTA_REDACAO']
 sexos = ['Masculino', 'Feminino']
@@ -61,6 +80,7 @@ def carregar_dados():
     microdadosEnem = microdadosEnem.dropna()
     microdadosEnem['Grau_Escolaridade_Pai'] = [dicionario_escolaridade[X] for X in microdadosEnem.Q001]
     microdadosEnem['Grau_Escolaridade_Mae'] = [dicionario_escolaridade[X] for X in microdadosEnem.Q002]
+    microdadosEnem['Renda Familiar'] = [faixas_de_renda[X] for X in microdadosEnem.Q006]
     dadosFiltrados = microdadosEnem[microdadosEnem.NO_MUNICIPIO_ESC == "Feira de Santana"]
     return microdadosEnem, dadosFiltrados
 
@@ -78,20 +98,9 @@ dist_Q001 = questionario_01.value_counts().sort_index()
 questionario_02 = microdadosEnem["Grau_Escolaridade_Mae"]
 dist_Q002 = questionario_02.value_counts().sort_index()
 
-questionario_06 = microdadosEnem["Q006"]
+questionario_06 = microdadosEnem["Renda Familiar"]
 dist_Q006 = questionario_06.value_counts().sort_index()
 
-dicionario_renda = {
-"Nenhuma Renda": dist_Q006["A"],
-"Até R$998,00": dist_Q006["B"],
-"De R$998,01 até R$1.996,00": dist_Q006["C"] + dist_Q006["D"],
-"De R$1.996,01 até R$2.994,00": dist_Q006["E"] +dist_Q006["F"],
-"De R$ 2.994,01 até R$4.990,00": dist_Q006["G"] +dist_Q006["H"],
-"De R$4.990,01 até R$6.986,00": dist_Q006["I"]+dist_Q006["J"],
-"De R$6.986,01 até R$8.982,00": dist_Q006["K"]+dist_Q006["L"],
-"De R$8.982,01 até R$11.976,00": dist_Q006["M"]+dist_Q006["N"],
-"Superior a R$11.976,011": dist_Q006["O"]+dist_Q006["P"]+dist_Q006["Q"]
-}
 def criar_dicionario_nota_por_renda(microdados, materias):
     categorias_renda = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"]
     dicionario_renda = {}
@@ -109,6 +118,12 @@ def criar_dicionario_nota(microdados, categorias, materias, questionario):
         dicionario[categoria] = medias_notas.to_dict()
     return dicionario
 
+def criar_dicionario_escolaridade(distribuicao):
+    return {categoria: distribuicao[categoria] for categoria in dicionario_escolaridade.values()}
+
+def criar_dicionario_renda_familiar(distribuicao):
+    return{categoria: distribuicao[categoria] for categoria in faixas_de_renda.values()}
+
 def constroiGraficoBarra(lista, dados):
     fig, ax1 = plt.subplots(figsize=(16, 8))
     bars = ax1.bar(lista, dados)
@@ -119,11 +134,16 @@ def constroiGraficoBarra(lista, dados):
         ax1.text(bar.get_x() + bar.get_width()/2.0, yval, round(yval, 2), ha='center', va='bottom', fontsize=14)
     return fig, ax1
 def constroiGraficoBarraHorizontal(dicionario):
-    fig, ax1= plt.subplots(figsize=(16, 8))
-    ax1.barh(list(dicionario.keys()), list(dicionario.values()))
+    fig, ax1 = plt.subplots(figsize=(16, 8))
+    bars = ax1.barh(list(dicionario.keys()), list(dicionario.values()))
     ax1.set_yticks(range(len(dicionario.keys())))
-    ax1.ticklabel_format(useOffset=False, style='plain', axis='x')
-    ax1.set_yticklabels(dicionario.keys(), rotation=0, fontsize= 16)
+    ax1.set_yticklabels(dicionario.keys(), rotation=0, fontsize=16)
+    ax1.ticklabel_format(useOffset=False, style='plain', axis='x')    
+    for bar in bars:
+        yval = bar.get_width()
+        ax1.text(yval, bar.get_y() + bar.get_height()/2.0, round(yval, 2), ha='left', va='center', fontsize=10)
+    
+
     return fig, ax1
 def constroiGraficoPizza(lista, percentual):
     fig, ax1 = plt.subplots(figsize=(16, 8))
@@ -154,7 +174,6 @@ def constroiGraficoComparativo(lista, dados_particular, dados_publico):
     
     ax.legend()
     return fig, ax
-import matplotlib.pyplot as plt
 
 def constroiGraficoLinhas(dicionario):
     fig, ax = plt.subplots(figsize=(16, 8))
@@ -255,8 +274,6 @@ def graficoProporcaoGeneroFsa():
     fig, ax = constroiGraficoPizza(sexos, percentSexo_FSA)
     return fig, ax
     
-def criar_dicionario_escolaridade(distribuicao):
-    return {categoria: distribuicao[categoria] for categoria in dicionario_escolaridade.values()}
 def graficoEscolaridadePai():
     questionario_01 = microdadosEnem["Grau_Escolaridade_Pai"]
     dist_Q001 = questionario_01.value_counts().sort_index()
@@ -269,8 +286,8 @@ def graficoEscolaridadeMae():
     return fig, ax
 
 def graficoRendaFamiliar():
-    
-    fig, ax = constroiGraficoBarraHorizontal(dicionario_renda)
+    dicionario = criar_dicionario_renda_familiar(dist_Q006)
+    fig, ax = constroiGraficoBarraHorizontal(dicionario)
     return fig, ax
 
 def graficoNotasPorRenda():

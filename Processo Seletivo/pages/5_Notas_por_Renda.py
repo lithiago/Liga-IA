@@ -27,6 +27,7 @@ faixas_de_renda = {
 }
 i = 0
 categorias= ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"]
+st.write("### Renda Familiar X Notas")
 for descricao in faixas_de_renda.values():
     st.write(f"{categorias[i]}: {descricao}")
     i+=1
