@@ -37,8 +37,6 @@ faixas_de_renda = {
     "Q": "Mais de  19.960,00."
 }
 
-colunas_materias = ['NU_NOTA_CN', 'NU_NOTA_CH', 'NU_NOTA_LC', 'NU_NOTA_MT', 'NU_NOTA_REDACAO']
-sexos = ['Masculino', 'Feminino']
 faixas_etarias = {
     1: 'Menor de 17 anos',
     2: '17 anos',
@@ -61,68 +59,28 @@ faixas_etarias = {
     19: 'Entre 66 e 70 anos',
     20: 'Maior de 70 anos'
 }
-faixas = ["Menor de 17 anos", "17 Anos", "18 Anos", "19 Anos", "20 Anos", "21 Anos", "22 Anos", "23 Anos", "24 Anos", "25 Anos", "Entre 26 e 30 Anos", "Entre 31 e 35 Anos", "Entre 36 e 40 anos", "Entre 41 e 45 Anos", "Entre 46 e 50 Anos", "Entre 51 e 55 Anos"]
 
-@st.cache_data
-def carregar_dados():
-    colunas = [
+colunas = [
         'TP_FAIXA_ETARIA', 'TP_SEXO', 'TP_ESCOLA',
         'NU_NOTA_CN', 'NU_NOTA_CH', 'NU_NOTA_LC', 'NU_NOTA_MT','NU_NOTA_REDACAO',
-        'CO_MUNICIPIO_ESC', 'NO_MUNICIPIO_ESC', 'CO_UF_ESC', 'SG_UF_ESC', 'Q001', 'Q002', 'Q006',
+        'NO_MUNICIPIO_PROVA', 'Q001', 'Q002', 'Q006',
     ]
-    
+
+if "data" not in st.session_state:
+    print("Entrou")
     microdadosEnem = pd.read_csv(
         "MICRODADOS_ENEM_2019.csv",
         sep=";", 
         encoding='ISO-8859-1',
         usecols=colunas
     )
-    microdadosEnem = microdadosEnem.dropna()
+    st.session_state['data'] = microdadosEnem
     microdadosEnem['Grau_Escolaridade_Pai'] = [dicionario_escolaridade[X] for X in microdadosEnem.Q001]
     microdadosEnem['Grau_Escolaridade_Mae'] = [dicionario_escolaridade[X] for X in microdadosEnem.Q002]
     microdadosEnem['Renda Familiar'] = [faixas_de_renda[X] for X in microdadosEnem.Q006]
-    dadosFiltrados = microdadosEnem[microdadosEnem.NO_MUNICIPIO_ESC == "Feira de Santana"]
-    return microdadosEnem, dadosFiltrados
-
-microdadosEnem, dadosFiltrados = carregar_dados()
-
-
-# Adicionar a coluna de faixa etária
-microdadosEnem['Faixa Etária'] = microdadosEnem['TP_FAIXA_ETARIA'].map(faixas_etarias)
-dadosFiltrados['Faixa Etária'] = dadosFiltrados['TP_FAIXA_ETARIA'].map(faixas_etarias)
-
-
-questionario_01 = microdadosEnem["Grau_Escolaridade_Pai"]
-dist_Q001 = questionario_01.value_counts().sort_index()
-
-questionario_02 = microdadosEnem["Grau_Escolaridade_Mae"]
-dist_Q002 = questionario_02.value_counts().sort_index()
-
-questionario_06 = microdadosEnem["Renda Familiar"]
-dist_Q006 = questionario_06.value_counts().sort_index()
-
-def criar_dicionario_nota_por_renda(microdados, materias):
-    categorias_renda = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"]
-    dicionario_renda = {}
-
-    for categoria in categorias_renda:
-        dados_filtrados = microdados[microdados['Q006'] == categoria]
-        medias_notas = dados_filtrados[materias].mean()
-        dicionario_renda[categoria] = medias_notas.to_dict()
-    return dicionario_renda
-def criar_dicionario_nota(microdados, categorias, materias, questionario):
-    dicionario = {}
-    for categoria in categorias:
-        dadosFiltrados = microdados[microdados[questionario] == categoria]
-        medias_notas = dadosFiltrados[materias].mean()
-        dicionario[categoria] = medias_notas.to_dict()
-    return dicionario
-
-def criar_dicionario_escolaridade(distribuicao):
-    return {categoria: distribuicao[categoria] for categoria in dicionario_escolaridade.values()}
-
-def criar_dicionario_renda_familiar(distribuicao):
-    return{categoria: distribuicao[categoria] for categoria in faixas_de_renda.values()}
+    
+    # Adicionar a coluna de faixa etária
+    microdadosEnem['Faixa Etária'] = microdadosEnem['TP_FAIXA_ETARIA'].map(faixas_etarias)
 
 def constroiGraficoBarra(lista, dados):
     fig, ax1 = plt.subplots(figsize=(16, 8))
@@ -131,8 +89,9 @@ def constroiGraficoBarra(lista, dados):
     ax1.set_xticklabels(lista, rotation=90, fontsize=16)
     for bar in bars:
         yval = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2.0, yval, round(yval, 2), ha='center', va='bottom', fontsize=14)
+        ax1.text(bar.get_x() + bar.get_width()/2.0, yval, round(yval, 2), ha='center', va='bottom', fontsize=12)
     return fig, ax1
+
 def constroiGraficoBarraHorizontal(dicionario):
     fig, ax1 = plt.subplots(figsize=(16, 8))
     bars = ax1.barh(list(dicionario.keys()), list(dicionario.values()))
@@ -145,6 +104,7 @@ def constroiGraficoBarraHorizontal(dicionario):
     
 
     return fig, ax1
+
 def constroiGraficoPizza(lista, percentual):
     fig, ax1 = plt.subplots(figsize=(16, 8))
     explode = (0.1, 0)
@@ -213,93 +173,4 @@ def constroiGraficoLinhas(dicionario):
     # Aumentar o intervalo no eixo y para dar mais espaço entre as linhas
     ax.set_ylim([y_min - 30, y_max + 30])
 
-    return fig, ax
-
-
-def graficoCompartivoNacional():
-    escolas_publicas = microdadosEnem[microdadosEnem['TP_ESCOLA'] == 2]    
-    escolas_privadas = microdadosEnem[microdadosEnem['TP_ESCOLA'] == 3]    
-
-    desempenho_publico = escolas_publicas[colunas_materias].describe()
-    desempenho_privado = escolas_privadas[colunas_materias].describe()
-
-    fig, ax1 = constroiGraficoComparativo(colunas_materias, desempenho_privado.loc['mean'], desempenho_publico.loc['mean'])
-    
-    return fig, ax1
-
-def graficoComparativoFsa():
-    escolas_publicas = dadosFiltrados[dadosFiltrados['TP_ESCOLA'] == 2]
-    escolas_privadas = dadosFiltrados[dadosFiltrados['TP_ESCOLA'] == 3]
-
-    
-    desempenho_publico = escolas_publicas[colunas_materias].describe()
-    desempenho_privado = escolas_privadas[colunas_materias].describe()
-    
-    fig, ax1 = constroiGraficoComparativo(colunas_materias, desempenho_privado.loc['mean'], desempenho_publico.loc['mean'])
-
-    return fig, ax1
-
-def graficoMediasNotasNacional():
-    
-    desempenho_nacional = microdadosEnem[colunas_materias].describe()
-    fig, ax = constroiGraficoBarra(colunas_materias, desempenho_nacional.loc['mean'])
-    return fig, ax
-
-def graficoMediasNotasFsa():
-    
-    desempenho_fsa = dadosFiltrados[colunas_materias].describe()
-    fig, ax = constroiGraficoBarra(colunas_materias, desempenho_fsa.loc['mean'])
-    return fig, ax
-
-def graficoDistribuicaoEtariaNacional():
-    distribuicao_nacional = microdadosEnem['Faixa Etária'].value_counts().sort_index()
-    fig, ax = constroiGraficoBarra(distribuicao_nacional.index, distribuicao_nacional.values)
-    return fig, ax
-
-def graficoDistribuicaoEtariaFsa():
-    distribuicao_feira = dadosFiltrados['Faixa Etária'].value_counts().sort_index()
-    fig, ax = constroiGraficoBarra(faixas, distribuicao_feira.values)
-    return fig, ax
-
-def graficoProporcaoGeneroNacional():
-    coluna_tp_sexo = microdadosEnem["TP_SEXO"]
-    distTP_SEXO = coluna_tp_sexo.value_counts()
-    percentSexo_Nacional = [100 * x / distTP_SEXO.sum() for x in distTP_SEXO]
-    fig, ax = constroiGraficoPizza(sexos, percentSexo_Nacional)
-    return fig, ax
-def graficoProporcaoGeneroFsa():
-    coluna_tp_sexo_FSA = dadosFiltrados["TP_SEXO"]
-    distTP_SEXO_FSA = coluna_tp_sexo_FSA.value_counts()
-    percentSexo_FSA = [100 * x / distTP_SEXO_FSA.sum() for x in distTP_SEXO_FSA]
-    fig, ax = constroiGraficoPizza(sexos, percentSexo_FSA)
-    return fig, ax
-    
-def graficoEscolaridadePai():
-    questionario_01 = microdadosEnem["Grau_Escolaridade_Pai"]
-    dist_Q001 = questionario_01.value_counts().sort_index()
-    dicionario = criar_dicionario_escolaridade(dist_Q001)
-    fig, ax = constroiGraficoBarraHorizontal(dicionario)
-    return fig, ax
-def graficoEscolaridadeMae():
-    dicionario = criar_dicionario_escolaridade(dist_Q002)
-    fig, ax = constroiGraficoBarraHorizontal(dicionario)
-    return fig, ax
-
-def graficoRendaFamiliar():
-    dicionario = criar_dicionario_renda_familiar(dist_Q006)
-    fig, ax = constroiGraficoBarraHorizontal(dicionario)
-    return fig, ax
-
-def graficoNotasPorRenda():
-    dicionario_renda = criar_dicionario_nota_por_renda(microdadosEnem, colunas_materias)
-    fig, ax = constroiGraficoLinhas(dicionario_renda)
-    return fig, ax
-
-def graficoNotasPorEscolaridadePai():
-    dicionario = criar_dicionario_nota(microdadosEnem,["A", "B", "C", "D", "E", "F", "G", "H"], colunas_materias, "Q001")
-    fig, ax = constroiGraficoLinhas(dicionario)
-    return fig, ax
-def graficoNotasPorEscolaridadeMae():
-    dicionario = criar_dicionario_nota(microdadosEnem,["A", "B", "C", "D", "E", "F", "G", "H"], colunas_materias, "Q002")
-    fig, ax = constroiGraficoLinhas(dicionario)
     return fig, ax

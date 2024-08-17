@@ -1,11 +1,26 @@
 import streamlit as st
-import main
+from main import constroiGraficoLinhas
 
-microdadosEnem, dadosFiltrados = main.carregar_dados()
+def criar_dicionario_nota(microdados, categorias, materias, questionario):
+    dicionario = {}
+    for categoria in categorias:
+        dadosFiltrados = microdados[microdados[questionario] == categoria]
+        medias_notas = dadosFiltrados[materias].mean()
+        dicionario[categoria] = medias_notas.to_dict()
+    return dicionario
+
+materias = ['NU_NOTA_CN', 'NU_NOTA_CH', 'NU_NOTA_LC', 'NU_NOTA_MT', 'NU_NOTA_REDACAO']
+
+microdadosEnem = st.session_state['data']
 
 
-fig_nota_escolaridade_pai, ax_pai = main.graficoNotasPorEscolaridadePai()
-fig_nota_escolaridade_mae, ax_mae = main.graficoNotasPorEscolaridadeMae()
+dicionario_pai = criar_dicionario_nota(microdadosEnem,["A", "B", "C", "D", "E", "F", "G", "H"], materias, "Q001")
+dicionario_mae = criar_dicionario_nota(microdadosEnem,["A", "B", "C", "D", "E", "F", "G", "H"], materias, "Q002")
+
+fig_nota_escolaridade_pai, ax_pai = constroiGraficoLinhas(dicionario_pai)
+fig_nota_escolaridade_mae, ax_mae = constroiGraficoLinhas(dicionario_mae)
+
+
 
 dicionario_escolaridade = {
     "A": "Nunca estudou.",

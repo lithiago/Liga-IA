@@ -1,12 +1,9 @@
 import streamlit as st
+from main import constroiGraficoLinhas
 
-import main
+df_data = st.session_state['data']
 
-
-microdadosEnem, dadosFiltrados = main.carregar_dados()
-
-fig_nota_renda, ax_nota_renda = main.graficoNotasPorRenda()
-
+materias = ['NU_NOTA_CN', 'NU_NOTA_CH', 'NU_NOTA_LC', 'NU_NOTA_MT', 'NU_NOTA_REDACAO']
 faixas_de_renda = {
     "A": "Nenhuma renda.",
     "B": "Até 998,00.",
@@ -26,10 +23,20 @@ faixas_de_renda = {
     "P": "De 14.970,01 - 19.960,00.",
     "Q": "Mais de  19.960,00."
 }
-i = 0
-categorias= ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"]
+
+categorias_renda = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"]
+dicionario_renda = {}
+
+for categoria in categorias_renda:
+    dados_filtrados = df_data[df_data['Q006'] == categoria]
+    medias_notas = dados_filtrados[materias].mean()
+    dicionario_renda[categoria] = medias_notas.to_dict()
+
+fig, ax = constroiGraficoLinhas(dicionario_renda)
+
 st.write("### Renda Familiar X Notas")
+i = 0
 for descricao in faixas_de_renda.values():
-    st.write(f"{categorias[i]}: {descricao}")
+    st.write(f"{categorias_renda[i]}: {descricao}")
     i+=1
-st.pyplot(fig_nota_renda)
+st.pyplot(fig)
