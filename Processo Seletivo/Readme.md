@@ -11,7 +11,7 @@
 ### Proporção de candidatos por gênero:
     ![Proporção de Candidatos por Gênero](resultados/Proporção%20de%20Candidatos%20por%20Gênero.png)
 ## Escolas Públicas e Particulares no Enem de 2019
-    ![Escolas Públicas e Particulares no Enem de 2019 em todo Brasil](resultados/Desempenho%20das%20Escolas%20Publicas%20e%20Privadas.png)
+    ![Escolas Públicas e Particulares no Enem de 2019 em todo Brasil](resultados/Desempenho_das_Escolas_Publicas_e_Privadas.png.png)
 ### Média das Notas do Enem de 2019
     ![Média das Notas do Enem de 2019](resultados/Media%20das%20Notas.png)
 ### Nível de Escolaridade dos Pais - Pai
